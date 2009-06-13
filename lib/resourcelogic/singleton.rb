@@ -41,8 +41,9 @@ module Resourcelogic
         end
       end
       
+      # Route alises can only be used for singleton, like account => user. Otherwise the urligence wont work because there is no account model.
       def object_url_parts(action = nil, *alternate_object_or_params)
-        singleton? ? ([action] + contexts_url_parts + [model_name]) : super
+        singleton? ? ([action] + contexts_url_parts + [route_name]) : super
       end
       
       # Override me with true to make singleton

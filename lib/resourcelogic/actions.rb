@@ -5,31 +5,11 @@ module Resourcelogic
     
     def self.included(klass)
       klass.class_eval do
-        extend Config
         ACTIONS.each do |action|
           class_scoping_reader action, FAILABLE_ACTIONS.include?(action) ? FailableActionOptions.new : ActionOptions.new
         end
+        class_scoping_reader :context, ContextOptions.new
         add_acts_as_resource_module(Methods)
-      end
-    end
-    
-    module Config
-      def actions(*opts)
-        config = {}
-        config.merge!(opts.pop) if opts.last.is_a?(Hash)
-        
-        all_actions = (false && singleton? ? Resourcelogic::SINGLETON_ACTIONS : Resourcelogic::Actions::ACTIONS) - [:new_action] + [:new]
-        
-        actions_to_remove = []
-        if opts.first == :none
-          actions_to_remove = all_actions
-        else
-          actions_to_remove += all_actions - opts unless opts.first == :all
-          actions_to_remove += [*config[:except]] if config[:except]
-          actions_to_remove.uniq!
-        end
-        
-        actions_to_remove.each { |action| undef_method(action) if method_defined?(action) }
       end
     end
     

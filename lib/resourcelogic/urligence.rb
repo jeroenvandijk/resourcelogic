@@ -29,21 +29,23 @@ module Resourcelogic
     private
       def urligence(*url_parts)
         url_parts = cleanup_url_parts(url_parts)
-        url_fragments = extract_url_fragments(url_parts)
-        url_objects = extract_url_objects(url_parts)
-
+        method_name_fragments = extract_method_name_fragments(url_parts)
+        method_arguments = extract_method_arguments(url_parts)
+        
         if url_parts.first != :hash_for
-          send url_fragments.join("_"), *url_objects
+          send method_name_fragments.join("_"), *method_arguments
         else
-          url_params = url_objects.extract_options!
+          url_params = method_arguments.extract_options!
           params = {}
-          url_objects.each_with_index do |obj, i|
-            key = i == (url_objects.size - 1) ? :id : (obj.is_a?(Array) ? "#{obj.first}_id".to_sym : "#{obj.class.name.underscore}_id".to_sym)
+          method_arguments.each_with_index do |obj, i|
+            key = i == (method_arguments.size - 1) ?
+              :id :
+              (obj.is_a?(Array) ? "#{obj.first}_id".to_sym : "#{obj.class.name.underscore}_id".to_sym)
             params.merge!((obj.is_a?(Array)) ? {key => obj[1].to_param} : {key => obj.to_param})
           end
-
+          
           params.merge!(url_params)
-          send url_fragments.join("_"), params
+          send method_name_fragments.join("_"), params
         end
       end
       
@@ -72,26 +74,30 @@ module Resourcelogic
       def cleanup_url_parts(url_parts)
         url_parts = url_parts.compact
         url_params = url_parts.last.is_a?(Hash) ? url_parts.last : {}
-        #non_symbol_object_total = url_parts.select { |object| !object.is_a?(Symbol) }.size - 1
-        #non_symbol_object_count = 0
         new_url_parts = []
+        
         url_parts.each do |object|
-          #non_symbol_object_count += 1 if !object.is_a?(Symbol)
           if !object.is_a?(Array)
+            # It's not an array, just copy it over
             new_url_parts << object
           else
+            # Let's try to 
             klass = object.first.to_s.camelize.constantize rescue nil
-            klass_name = klass ? klass.name.underscore : nil
-            #key = (non_symbol_object_count == non_symbol_object_total) ? :id : "#{object.first}_id".to_sym
-            key = "#{object.first}_id".to_sym
-            obj = (url_params.key?(key) ? ((!klass && url_params[key]) || (url_params[key] && klass.find(url_params.delete(key)))) : object[1])
-            new_url_parts << (obj.nil? ? object.first.to_s.pluralize.to_sym : [object.first, obj])
+            #klass_name = klass ? klass.name.underscore : nil
+            params_key = "#{object.first}_id".to_sym
+            obj = if url_params.key?(params_key)
+              (!klass && url_params[params_key]) || (url_params[params_key] && klass.find(url_params.delete(params_key)))
+            else
+              object[1]
+            end
+            new_url_parts << [object.first, obj]
+            #new_url_parts << (obj.nil? ? object.first.to_s.pluralize.to_sym : [object.first, obj])
           end
         end
         new_url_parts
       end
       
-      def extract_url_fragments(url_parts)
+      def extract_method_name_fragments(url_parts)
         fragments = url_parts.collect do |obj|
           if obj.is_a?(Symbol)
             obj
@@ -104,7 +110,7 @@ module Resourcelogic
         fragments.compact
       end
       
-      def extract_url_objects(url_parts)
+      def extract_method_arguments(url_parts)
         url_parts.flatten.select { |obj| !obj.is_a?(Symbol) }
       end
       

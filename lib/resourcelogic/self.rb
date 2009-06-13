@@ -10,12 +10,17 @@ module Resourcelogic
     
     module Config
       def model_name(value = nil)
-        rw_config(:model_name, value, controller_name.singularize.underscore.to_sym)
+        rw_config(:model_name, value, model_name_from_name)
       end
       
       def object_name(value = nil)
-        rw_config(:object_name, value, controller_name.singularize.underscore.to_sym)
+        rw_config(:object_name, value, model_name_from_name)
       end
+      
+      private
+        def model_name_from_name
+          name.underscore.split("/").first.gsub(/_controller/, "").singularize.underscore.to_sym
+        end
     end
     
     module UrlParts
@@ -23,7 +28,7 @@ module Resourcelogic
         # Used internally to provide the options to smart_url from Urligence.
         #
         def collection_url_parts(action = nil, url_params = {})
-          [action] + contexts_url_parts + [model_name.to_s.pluralize.to_sym, url_params]
+          [action] + contexts_url_parts + [route_name.to_s.pluralize.to_sym, url_params]
         end
         
         # Used internally to provide the options to smart_url from Urligence.
@@ -32,13 +37,15 @@ module Resourcelogic
           alternate_object, url_params = identify_object_or_params(alternate_object_or_params)
           url_object = alternate_object
           url_object = object if url_object.nil? && object && !object.new_record?
-          object_parts = url_object ? [model_name, url_object] : model_name
+          object_parts = url_object ?
+            [route_name, url_object] :
+            (action == :new || singleton? ? route_name : route_name.to_s.pluralize.to_sym)
           [action] + contexts_url_parts + [object_parts, url_params]
         end
         
         def identify_object_or_params(object_or_params)
           obj = nil
-          url_params = nil
+          url_params = {}
           if object_or_params.size > 1
             url_params = object_or_params.last if object_or_params.last.is_a?(Hash)
             obj = object_or_params.first
@@ -53,10 +60,34 @@ module Resourcelogic
     
     module Reflection
       def self.included(klass)
-        klass.helper_method :model_name, :collection, :object
+        klass.helper_method :model_name, :collection, :object, :path_name, :route_name
       end
       
       private
+        def path_name
+          return @path_name if defined?(@path_name)
+          path_parts = request.path.split("/")
+          path_parts.reverse.each do |path_part|
+            next if path_part.blank?
+            if model_name_from_path_part(path_part) == model_name
+              return @path_name = path_part.to_sym
+            end
+          end
+          @path_name = nil
+        end
+        
+        def route_name
+          return @route_name if defined?(@route_name)
+          path_parts = request.path.split("/")
+          path_parts.reverse.each do |path_part|
+            next if path_part.blank?
+            if model_name_from_path_part(path_part) == model_name
+              return @route_name = route_name_from_path_part(path_part)
+            end
+          end
+          @route_name = model_name
+        end
+        
         # Convenience method for the class level model_name method
         def model_name
           @model_name ||= self.class.model_name.to_sym

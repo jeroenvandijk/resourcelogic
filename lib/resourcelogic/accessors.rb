@@ -33,7 +33,7 @@ module Resourcelogic # :nodoc:
         write_inheritable_attribute accessor_name, start_value
         
         class_eval <<-"end_eval", __FILE__, __LINE__
-          def self.#{accessor_name}(&block)
+          def self.#{accessor_name}(context = :root, &block)
             read_inheritable_attribute(:#{accessor_name}).instance_eval(&block) if block_given?
             read_inheritable_attribute(:#{accessor_name})
           end

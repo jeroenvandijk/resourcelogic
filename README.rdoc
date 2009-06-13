@@ -26,7 +26,7 @@ That being said, why can't we accomplish the same thing with an HTML interface? 
     
     private
       # context is irrelevant when determining scope
-      def scope
+      def end_of_association_chain
         current_user.admin? ? Comment : current_user.comments
       end
   end
@@ -103,7 +103,7 @@ Then in your controller use the context method to make adjustments:
     layout Proc.new { context == :admin ? "admin" : "application" }
   end
 
-You also have the same context method in your views. Lastly, if you feel your views are getting cluttered by trying to determine what context you are in, you can use the contextual_views option (See Resourcelogic::Context::Config for more info). This will change your default view path to a context subfolder. Ex:
+You also have the same context method in your views. Lastly, if you feel your views are getting cluttered by trying to determine what context you are in, you can use the namespace_views_by_context option (See Resourcelogic::Context::Config for more info). This will change your default view path to a context subfolder. Ex:
 
   /comments
     /admin
@@ -119,7 +119,7 @@ I don't want to repeat what is already in the documentation, but there are a lot
 <b>Class level methods</b>
 
   belongs_to :relationship_name   # will check to see if the resource is being scoped by a parent and give you some nifty methods for this (see below). You can call this multiple times. Just like ActiveRecord.
-  contextual_views true           # will split up your views into subfolders: comments/context1, comments/context2, and will change your default view path to the respective folder
+  namespace_views_by_context true # will split up your views into subfolders: comments/context1, comments/context2, and will change your default view path to the respective folder
 
 <b>Instance level methods</b>
 
@@ -129,57 +129,24 @@ Lets pretend we are dealing with a products resource that belongs to a category.
   
   object                                  # current product object, if any
   collection                              # current collection of products
-  parent                                  # current category object, if any
-
-Now you have all of the "relative routes" to help you easily nest resources and use them in different contexts:
-  
   object_path                             # /products/:id
-  edit_object_path                        # /products/:id/edit
   new_object_path                         # /products/new
   collection_path                         # /products
   
+  parent                                  # current category object, if any
   parent_path                             # /categories/:parent_id
-  edit_parent_path                        # /categories/:parent_id/edit
   parent_collection_path                  # /categories
   new_parent_path                         # /categories/new
   
   sibling_path(sibling)                   # /sibling_name/:id
-  edit_sibling_path(sibling)              # /sibling_name/:id/edit
   new_sibling_path(:sibling_name)         # /sibling_name/new
   sibling_collection_path(:sibling_name)  # /sibling_name
   
   child_path(child)                       # /products/:product_id/child_name/:id
-  edit_child_path(child)                  # /products/:product_id/child_name/:id/edit
   new_child_path(:child_name)             # /products/:product_id/child_name/new
   child_collection_path(:child_name)      # /products/:product_id/child_name
+  
+All of the above can end with _url instead of _path. <b>See docs for a complete list of available methods.</b>
 
-Notice you have the edit_* paths. The above paths are implemented in a very flexible manner. So you are not limited them, you can call your custom actions too:
-
-  map.resources :products, :member => [:approve], :collection => [:approve_all]
-  approve_object_path                     # /products/:id/approve
-  approve_all_collection_path             # /products/approve
-
-The above example is probably not the best one, but you get the point.
-
-Lastly, all of the above can end with _url instead of _path. <b>See docs for a complete list of available methods.</b>
-
-== Why Resourcelogic is great
-
-Just to kind of get you thinking out of the box a little bit, I wrote a nice little breadcrumbs method that I am using in one of my apps:
-
-  def breadcrumbs
-    return [] if !resourceful?
-    url_parts = []
-    crumbs = []
-    contexts_url_parts.each do |url_part|
-      url_parts << url_part
-      text = url_part.is_a?(Array) ? "#{url_part.first.to_s.humanize} ##{url_part.last}" : url_part.to_s.humanize
-      url = url_part.is_a?(Array) ? [:edit] + url_parts : url_parts
-      crumbs << link_to(text, smart_path(*url))
-    end
-    crumbs
-  end
-
-The point of Resourcelogic is to give you the tools you need to properly establish a pattern in your application. REST is a great pattern. The problem is that you can't use the REST pattern while still nesting resources and putting them into various contexts. Resourceloic aims to close this gap so that you can do this. Once you have a clearly defined pattern in your application, you can take advantage of it and easily do things, like the breadcrumbs example, that would otherwise clutter up your application.
 
 Copyright (c) 2008 {Ben Johnson of Binary Logic}[http://www.binarylogic.com], released under the MIT license

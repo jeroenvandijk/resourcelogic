@@ -75,18 +75,6 @@ module Resourcelogic # :nodoc:
         resourceful == true
       end
       
-      def route_alias(alias_name, model_name)
-        current_aliases = route_aliases
-        model_name = model_name.to_sym
-        current_aliases[model_name] ||= []
-        current_aliases[model_name] << alias_name.to_sym
-        write_inheritable_attribute(:route_aliases, current_aliases)
-      end
-      
-      def route_aliases
-        read_inheritable_attribute(:route_aliases) || {}
-      end
-      
       private
         def acts_as_resource_modules
           key = :acts_as_resource_modules
@@ -104,22 +92,16 @@ module Resourcelogic # :nodoc:
     
     module InstanceMethods
       def self.included(klass)
-        klass.helper_method :resourceful?
-      end
-      
-      def model_name_from_route_alias(alias_name)
-        route_aliases.each do |model_name, aliases|
-          return model_name if aliases.include?(alias_name.to_sym)
-        end
-        nil
-      end
-      
-      def route_aliases
-        self.class.route_aliases
+        klass.helper_method :resourceful?, :section
       end
       
       def resourceful?
         self.class.resourceful?
+      end
+      
+      def section
+        section = request.path.split("/")[1]
+        section && section.to_sym
       end
     end
   end
@@ -136,11 +118,13 @@ if defined?(::ActionController)
       include Resourcelogic::Scope
       include Resourcelogic::Self
       include Resourcelogic::Sibling
+      include Resourcelogic::SubViews
       include Resourcelogic::Urligence
       
       # Need to be loaded last to override methods
       include Resourcelogic::Parent
-      include Resourcelogic::Singleton
+      include Resourcelogic::Aliases
+       include Resourcelogic::Singleton
     end
   end
 end

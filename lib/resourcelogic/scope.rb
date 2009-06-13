@@ -15,7 +15,13 @@ module Resourcelogic
       
       private
         def scope
-          parent? ? parent_object.send(parent_scope_name) : model
+          return @scope if defined?(@scope)
+          
+          if parent?
+            @scope = parent_object.send(parent_scope_name)
+          else
+            @scope = model
+          end
         end
         
         def parent_scope

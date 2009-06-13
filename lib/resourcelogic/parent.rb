@@ -47,10 +47,28 @@ module Resourcelogic
           self.class.belongs_to
         end
         
-        def parent_alias
-          return @parent_alias if defined?(@parent_alias)
-          parent_from_path?
-          @parent_alias
+        def parent_path_name
+          return @parent_path_name if defined?(@parent_path_name)
+          path_parts = request.path.split("/")
+          path_parts.reverse.each do |path_part|
+            next if path_part.blank?
+            if model_name_from_path_part(path_part) == parent_model_name
+              return @parent_path_name = path_part.to_sym
+            end
+          end
+          @parent_path_name = nil
+        end
+        
+        def parent_route_name
+          return @parent_route_name if defined?(@parent_route_name)
+          path_parts = request.path.split("/")
+          path_parts.reverse.each do |path_part|
+            next if path_part.blank?
+            if model_name_from_path_part(path_part) == parent_model_name
+              return @parent_route_name = route_name_from_path_part(path_part)
+            end
+          end
+          @parent_route_name = parent_model_name
         end
         
         # Returns the type of the current parent
@@ -66,15 +84,14 @@ module Resourcelogic
         end
         
         # Returns the type of the current parent extracted form a request path
-        #    
+        #
         def parent_from_path?
           return @parent_from_path if defined?(@parent_from_path)
           belongs_to.each do |model_name, options|
             request.path.split('/').reverse.each do |path_part|
-              ([model_name] + (route_aliases[model_name] || [])).each_with_index do |possible_name, index|
+              possible_model_names(model_name).each_with_index do |possible_name, index|
                 if [possible_name.to_s, possible_name.to_s.pluralize].include?(path_part)
                   @parent_model_name = model_name
-                  @parent_alias = index > 0 ? possible_name : nil
                   return @parent_from_path = true
                 end
               end
@@ -92,21 +109,23 @@ module Resourcelogic
         # Returns true/false based on whether or not a parent is a singleton.
         #
         def parent_singleton?
-          parent_id.nil?
+          parent? && parent_id.nil?
         end
         
         # Returns the current parent param, if there is a parent. (i.e. params[:post_id])
         def parent_id
-          params["#{parent_model_name}_id".to_sym]
+          params["#{parent_route_name}_id".to_sym]
         end
         
         # Returns the current parent object if a parent object is present.
         #
-        def parent_object
-          return @parent_object if defined?(@parent_object)
+        def parent_object(reload = false)
+          return @parent_object if !reload && defined?(@parent_object)
           if parent?
             if parent_singleton? && respond_to?("current_#{parent_model_name}", true)
               @parent_object = send("current_#{parent_model_name}")
+            elsif parent_singleton? && parent_scope.respond_to?(parent_model_name)
+              @parent_object = parent_scope.send(parent_model_name, reload)
             else
               @parent_object = parent_scope.find(parent_id)
             end
