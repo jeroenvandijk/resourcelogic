@@ -40,7 +40,7 @@ module Resourcelogic # :nodoc:
     end
 
     MAJOR = 0
-    MINOR = 10
+    MINOR = 11
     TINY  = 0
 
     # The current version as a Version instance
