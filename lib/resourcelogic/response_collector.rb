@@ -10,8 +10,13 @@ module Resourcelogic
     end
     
     def method_missing(method_name, &block)
-      @responses.delete self[method_name]
-      @responses << [method_name, block || nil]
+      existing = self[method_name]
+      if existing
+        existing[0] = method_name
+        existing[1] = block || nil
+      else
+        @responses << [method_name, block || nil]
+      end
     end
     
     def [](symbol)
