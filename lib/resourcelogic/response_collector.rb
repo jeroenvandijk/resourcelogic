@@ -10,12 +10,12 @@ module Resourcelogic
     end
     
     def method_missing(method_name, &block)
-      existing = self[method_name]
-      if existing
-        existing[0] = method_name
-        existing[1] = block || nil
+      @responses.delete self[method_name]
+      value = [method_name, block || nil]
+      if method_name == :html
+        @responses.unshift(value)
       else
-        @responses << [method_name, block || nil]
+        @responses << value
       end
     end
     
