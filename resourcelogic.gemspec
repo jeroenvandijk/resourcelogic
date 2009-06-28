@@ -37,7 +37,8 @@ Gem::Specification.new do |s|
      "lib/resourcelogic/sibling.rb",
      "lib/resourcelogic/singleton.rb",
      "lib/resourcelogic/sub_views.rb",
-     "lib/resourcelogic/urligence.rb"
+     "lib/resourcelogic/urligence.rb",
+     "resourcelogic.gemspec"
   ]
   s.homepage = %q{http://github.com/binarylogic/resourcelogic}
   s.rdoc_options = ["--charset=UTF-8"]
