@@ -6,7 +6,7 @@ The purpose of Resourcelogic is to support a development style I created called 
 
 == Helpful links
 
-*	<b>Documentation:</b> http://resourcelogic.rubyforge.org
+*	<b>Documentation:</b> http://rdoc.info/projects/binarylogic/resourcelogic
 * <b>Bugs / feature suggestions:</b> http://binarylogic.lighthouseapp.com/projects/28581-resourcelogic
 
 == Contextual Development

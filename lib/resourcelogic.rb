@@ -1,4 +1,3 @@
-require File.dirname(__FILE__) + "/resourcelogic/version"
 require File.dirname(__FILE__) + "/resourcelogic/accessors"
 require File.dirname(__FILE__) + "/resourcelogic/action_options"
 require File.dirname(__FILE__) + "/resourcelogic/actions"
