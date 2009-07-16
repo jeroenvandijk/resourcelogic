@@ -40,7 +40,8 @@ module Resourcelogic
         # development intact. Maybe you only want to use payments as a context for the
         # credit cards resource.
         def child_base_parts(action, url_params)
-          object_to_use = (url_params.key?("#{model_name}_id".to_sym) && url_params["#{model_name}_id".to_sym]) || (id? && object)
+          key = "#{model_name}_id".to_sym
+          object_to_use = url_params.key?(key) ? url_params[key] : (id? && object)
           base_parts = object_to_use || singleton? ? object_url_parts(action, object_to_use) : collection_url_parts(action)
           base_parts.pop if base_parts.last.is_a?(Hash)
           base_parts
