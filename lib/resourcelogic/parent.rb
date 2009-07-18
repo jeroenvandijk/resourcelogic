@@ -7,33 +7,31 @@ module Resourcelogic
         add_acts_as_resource_module(Reflection)
       end
     end
-    
+
     module Config
-      def belongs_to(name = nil, options = {})
+      def belongs_to(*args)
+        options = args.extract_options!
         @belongs_to ||= {}
-        if name.nil?
-          @belongs_to
-        else
-          @belongs_to[name.to_sym] = options
-        end
+        args.each { |name| @belongs_to[name.to_sym] = options }
+        @belongs_to
       end
-      
+
       def require_parent(value = nil)
         rw_config(:require_parent, value, false)
       end
     end
-    
+
     module Urls
       private
         def parent_url_parts(action = nil, url_params = {})
           [action] + contexts_url_parts + [url_params]
         end
-        
+
         def parent_collection_url_parts(*args)
           parent_url_parts(*args)
         end
     end
-    
+
     module Reflection
       def self.included(klass)
         klass.class_eval do
@@ -41,12 +39,12 @@ module Resourcelogic
           before_filter :require_parent
         end
       end
-      
+
       private
         def belongs_to
           self.class.belongs_to
         end
-        
+
         def parent_path_name
           return @parent_path_name if defined?(@parent_path_name)
           path_parts = request.path.split("/")
@@ -58,7 +56,7 @@ module Resourcelogic
           end
           @parent_path_name = nil
         end
-        
+
         def parent_route_name
           return @parent_route_name if defined?(@parent_route_name)
           path_parts = request.path.split("/")
@@ -70,7 +68,7 @@ module Resourcelogic
           end
           @parent_route_name = parent_model_name
         end
-        
+
         # Returns the type of the current parent
         #
         def parent_model_name
@@ -78,11 +76,11 @@ module Resourcelogic
           parent_from_path?
           @parent_model_name
         end
-        
+
         def parent_model
           @parent_model ||= parent_model_name.to_s.camelize.constantize
         end
-        
+
         # Returns the type of the current parent extracted form a request path
         #
         def parent_from_path?
@@ -99,24 +97,24 @@ module Resourcelogic
           end
           @parent_from_path = false
         end
-        
+
         # Returns true/false based on whether or not a parent is present.
         #
         def parent?
           !parent_model_name.nil?
         end
-        
+
         # Returns true/false based on whether or not a parent is a singleton.
         #
         def parent_singleton?
           parent? && parent_id.nil?
         end
-        
+
         # Returns the current parent param, if there is a parent. (i.e. params[:post_id])
         def parent_id
           params["#{parent_route_name}_id".to_sym]
         end
-        
+
         # Returns the current parent object if a parent object is present.
         #
         def parent_object(reload = false)
@@ -133,10 +131,11 @@ module Resourcelogic
             @parent_object = nil
           end
         end
-        
+
         def require_parent
           raise StandardError.new("A parent is required to access this resource and no parent was found") if !parent? && self.class.require_parent == true
         end
     end
   end
 end
+
