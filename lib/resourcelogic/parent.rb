@@ -73,7 +73,7 @@ module Resourcelogic
         #
         def parent_model_name
           return @parent_model_name if defined?(@parent_model_name)
-          parent_from_path?
+          parent_from_path? || parent_from_params?
           @parent_model_name
         end
 
@@ -96,6 +96,19 @@ module Resourcelogic
             end
           end
           @parent_from_path = false
+        end
+
+        # Returns the type of the current parent extracted form the request parameters
+        #
+        def parent_from_params?
+          return @parent_from_params if defined?(@parent_from_params)
+          belongs_to.each do |model_name, options|
+            if params["#{model_name}_id".to_sym]
+              @parent_model_name = model_name
+              return @parent_from_params = true
+            end
+          end
+          @parent_from_params = false
         end
 
         # Returns true/false based on whether or not a parent is present.
